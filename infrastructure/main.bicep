@@ -1,9 +1,10 @@
 targetScope = 'subscription'
 
-var location = 'westeurope'
+param location string = deployment().location
 var rgName = 'aca-network-demo'
 var rgNameService1 ='aca-network-demo-service1'
 var rgNameService2 ='aca-network-demo-service2'
+param publicKey string
 
 resource infrastructure 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: rgName
@@ -26,11 +27,27 @@ module hubVnet 'modules/vnet.bicep' = {
   params: {
     location: location
     vnetName: 'vnet-hub'
+    subnets: [
+      {
+        name: 'iaas'
+        properties: {
+          addressPrefix: '10.0.0.0/24'
+        }
+      }
+      {
+        name: 'AzureBastionSubnet'
+        properties: {
+          addressPrefix: '10.0.1.0/24'
+        }
+      }
+      {
+        name: 'AzureFirewallSubnet'
+        properties: {
+          addressPrefix: '10.0.2.0/24'
+        }
+      }
+    ]
     vnetAddressPrefix: '10.0.0.0/16'
-    subnet1AddressPrefix: '10.0.0.0/24'
-    subnet1Name: 'iaas'
-    subnet2AddressPrefix: '10.0.1.0/24'
-    subnet2Name: 'AzureBastionSubnet'
   }
 }
 
@@ -41,10 +58,20 @@ module service1vnet 'modules/vnet.bicep' = {
     location: location
     vnetName: 'vnet-service1'
     vnetAddressPrefix: '10.1.0.0/16'
-    subnet1AddressPrefix: '10.1.0.0/24'
-    subnet1Name: 'iaas'
-    subnet2AddressPrefix: '10.1.2.0/23'
-    subnet2Name: 'aca'
+    subnets: [
+      {
+        name: 'iaas'
+        properties: {
+          addressPrefix: '10.1.0.0/24'
+        }
+      }
+      {
+        name: 'aca'
+        properties: {
+          addressPrefix: '10.1.2.0/23'
+        }
+      }
+    ]
   }
 }
 
@@ -55,10 +82,38 @@ module service2vnet 'modules/vnet.bicep' = {
     location: location
     vnetName: 'vnet-service2'
     vnetAddressPrefix: '10.2.0.0/16'
-    subnet1AddressPrefix: '10.2.0.0/24'
-    subnet1Name: 'iaas'
-    subnet2AddressPrefix: '10.2.2.0/23'
-    subnet2Name: 'aca'
+    subnets: [
+      {
+        name: 'iaas'
+        properties: {
+          addressPrefix: '10.2.0.0/24'
+        }
+      }
+      {
+        name: 'aca'
+        properties: {
+          addressPrefix: '10.2.2.0/23'
+        }
+      }
+    ]
+  }
+}
+
+module spoke2tohub 'modules/vnetpeering.bicep' =  {
+  scope: resourceGroup(rgName)
+  name: 'spoke2tohub'
+  params: {
+    destinationVnet: hubVnet.outputs.vnetId
+    sourceVnet: '${service2vnet.outputs.vnetName}/spoke2tohub'
+  }
+}
+
+module hubtospoke2 'modules/vnetpeering.bicep' =  {
+  scope: resourceGroup(rgName)
+  name: 'hubtospoke2'
+  params: {
+    destinationVnet: service2vnet.outputs.vnetId
+    sourceVnet: '${hubVnet.outputs.vnetName}/hubtospoke2'
   }
 }
 
@@ -94,3 +149,33 @@ module aca2 'modules/containerapp.bicep' = {
     subnetId: service2vnet.outputs.subnets[1].id
   }
 }
+
+module bastion 'modules/bastion.bicep' =  {
+  scope: resourceGroup(rgName)
+  name: 'bastion'
+  params: {
+    bastionHostName: 'bastion'
+    bastionSubnet: hubVnet.outputs.subnets[1].id
+    location: location
+    publicIpName: 'pip-bastion'
+  }
+}
+
+module ubuntu 'modules/ubuntu.bicep' = {
+  scope: resourceGroup(rgName)
+  name: 'ubuntu'
+  params: {
+    location: location
+    subnetid: hubVnet.outputs.subnets[0].id
+    vmname: 'ubuntu'
+    publicKey: publicKey
+  }
+}
+
+/* TODO
+ AZFW basic in hub
+ PLS in spoke1, exposing SLB for ACA
+ PE in spoke1, exposing cosmosdb in spoke2
+ DNS zones for privatelink registered in hub for resolution
+ VM in hub
+*/
