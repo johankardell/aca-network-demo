@@ -177,5 +177,4 @@ module ubuntu 'modules/ubuntu.bicep' = {
  PLS in spoke1, exposing SLB for ACA
  PE in spoke1, exposing cosmosdb in spoke2
  DNS zones for privatelink registered in hub for resolution
- VM in hub
 */
