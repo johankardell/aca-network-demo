@@ -21,3 +21,5 @@ resource acaenv 'Microsoft.App/managedEnvironments@2022-03-01' = {
     }
   }
 }
+
+output id string  = acaenv.id

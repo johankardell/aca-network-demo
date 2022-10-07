@@ -2,8 +2,8 @@ targetScope = 'subscription'
 
 param location string = deployment().location
 var rgName = 'aca-network-demo'
-var rgNameService1 ='aca-network-demo-service1'
-var rgNameService2 ='aca-network-demo-service2'
+var rgNameService1 = 'aca-network-demo-service1'
+var rgNameService2 = 'aca-network-demo-service2'
 param publicKey string
 
 resource infrastructure 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -66,6 +66,13 @@ module service1vnet 'modules/vnet.bicep' = {
         }
       }
       {
+        name: 'pls'
+        properties: {
+          addressPrefix: '10.1.1.0/24'
+          privateLinkServiceNetworkPolicies: 'Disabled'
+        }
+      }
+      {
         name: 'aca'
         properties: {
           addressPrefix: '10.1.2.0/23'
@@ -99,7 +106,7 @@ module service2vnet 'modules/vnet.bicep' = {
   }
 }
 
-module spoke2tohub 'modules/vnetpeering.bicep' =  {
+module spoke2tohub 'modules/vnetpeering.bicep' = {
   scope: resourceGroup(rgName)
   name: 'spoke2tohub'
   params: {
@@ -108,7 +115,7 @@ module spoke2tohub 'modules/vnetpeering.bicep' =  {
   }
 }
 
-module hubtospoke2 'modules/vnetpeering.bicep' =  {
+module hubtospoke2 'modules/vnetpeering.bicep' = {
   scope: resourceGroup(rgName)
   name: 'hubtospoke2'
   params: {
@@ -126,23 +133,33 @@ module logAnalytics 'modules/loganalytics.bicep' = {
   }
 }
 
-module aca1 'modules/containerapp.bicep' = {
+module aca1 'modules/containerappEnvironment.bicep' = {
   scope: resourceGroup(rgNameService1)
   name: 'service1'
   params: {
-    envname: 'aca-service1' 
+    envname: 'aca-service1'
     laCustomerId: logAnalytics.outputs.customerId
     laSharedKey: logAnalytics.outputs.sharedKey
     location: location
-    subnetId: service1vnet.outputs.subnets[1].id
+    subnetId: service1vnet.outputs.subnets[2].id
   }
 }
 
-module aca2 'modules/containerapp.bicep' = {
+module demoappService1 'modules/aca-demo-app.bicep' = {
+  scope: resourceGroup(rgNameService1)
+  name: 'demoapp1'
+  params: {
+    appname: 'demoapp1' 
+    envId: aca1.outputs.id
+    location: location
+  }
+}
+
+module aca2 'modules/containerappEnvironment.bicep' = {
   scope: resourceGroup(rgNameService2)
   name: 'service2'
   params: {
-    envname: 'aca-service2' 
+    envname: 'aca-service2'
     laCustomerId: logAnalytics.outputs.customerId
     laSharedKey: logAnalytics.outputs.sharedKey
     location: location
@@ -150,7 +167,7 @@ module aca2 'modules/containerapp.bicep' = {
   }
 }
 
-module bastion 'modules/bastion.bicep' =  {
+module bastion 'modules/bastion.bicep' = {
   scope: resourceGroup(rgName)
   name: 'bastion'
   params: {
@@ -172,9 +189,50 @@ module ubuntu 'modules/ubuntu.bicep' = {
   }
 }
 
+module ubuntuSvc1 'modules/ubuntu.bicep' = {
+  scope: resourceGroup(rgNameService1)
+  name: 'ubuntuSvc1'
+  params: {
+    location: location
+    subnetid: service1vnet.outputs.subnets[0].id
+    vmname: 'ubuntu'
+    publicKey: publicKey
+    enablePublicIp: true
+  }
+}
+
+// resource acaLBService1 'Microsoft.Network/loadBalancers@2020-11-01' existing = {
+//   scope: resourceGroup('MC_gentlehill-7cc635dd-rg_gentlehill-7cc635dd_westeurope')
+//   name: 'kubernetes'
+// }
+
+
+module plsService1 'modules/privatelinkservice.bicep' =  {
+  scope: resourceGroup(rgNameService1)
+  name: 'pls-aca-service1'
+  params: {
+    // loadBalancer: acaLBService1
+    location: location
+    privatelinkServiceName: 'pls-aca-service1'
+    subnetId: service1vnet.outputs.subnets[1].id
+  }
+}
+
+module peService1 'modules/privateendpoint.bicep' = {
+  scope: resourceGroup(rgName)
+  name: 'pe-pls-service1'
+  params: {
+    location: location
+    privateEndpointName: 'pe-pls-service1'
+    privatelinkServiceId: plsService1.outputs.id
+    subnetId: hubVnet.outputs.subnets[0].id
+  }
+}
+
 /* TODO
  AZFW basic in hub
- PLS in spoke1, exposing SLB for ACA
+ PLS in spoke1, exposing SLB for ACA. PE in hub.
  PE in spoke1, exposing cosmosdb in spoke2
  DNS zones for privatelink registered in hub for resolution
+ Get the external LB for ACA dynamically (not hard coded magic strings)
 */
