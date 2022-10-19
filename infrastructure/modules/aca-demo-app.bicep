@@ -26,3 +26,5 @@ resource academo 'Microsoft.App/containerApps@2022-03-01' = {
     }
   }
 }
+
+output uri string = academo.properties.configuration.ingress.fqdn

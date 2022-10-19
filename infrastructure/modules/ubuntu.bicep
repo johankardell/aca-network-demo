@@ -3,7 +3,7 @@ param vmname string
 param subnetid string
 param adminUsername string = 'azureuser'
 param publicKey string
-param enablePublicIp bool = false
+param enablePublicIp bool = true
 
 resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2019-11-01' = if (enablePublicIp) {
   name: 'pip-${vmname}'
@@ -22,9 +22,9 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = {
         name: 'ipconfig'
         properties: {
           privateIPAllocationMethod: 'Dynamic'
-          publicIPAddress : enablePublicIp ?  {
+          publicIPAddress: {
             id: publicIPAddress.id
-          } : null
+          }
           subnet: {
             id: subnetid
           }
@@ -33,7 +33,6 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = {
     ]
   }
 }
-
 
 resource ubuntuVM 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   name: vmname

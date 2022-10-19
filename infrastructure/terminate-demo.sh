@@ -1,3 +1,4 @@
+az group delete -n aca-network-demo-service3 -y --no-wait
 az group delete -n aca-network-demo-service2 -y --no-wait
 az group delete -n aca-network-demo-service1 -y --no-wait
 az group delete -n aca-network-demo -y --no-wait
