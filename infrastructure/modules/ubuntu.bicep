@@ -64,7 +64,7 @@ resource ubuntuVM 'Microsoft.Compute/virtualMachines@2020-12-01' = {
         version: 'latest'
       }
       osDisk: {
-        name: 'name'
+        name: 'osdisk-${vmname}'
         caching: 'ReadWrite'
         createOption: 'FromImage'
       }
