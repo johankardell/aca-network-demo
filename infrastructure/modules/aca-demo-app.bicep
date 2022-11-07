@@ -1,6 +1,7 @@
 param appname string
 param location string
 param envId string
+param allowInsecure bool = false
 
 resource academo 'Microsoft.App/containerApps@2022-03-01' = {
   name: appname
@@ -11,6 +12,7 @@ resource academo 'Microsoft.App/containerApps@2022-03-01' = {
       ingress: {
         targetPort: 80
         external: true
+        allowInsecure: allowInsecure
       }
     }
     template: {

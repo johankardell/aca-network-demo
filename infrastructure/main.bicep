@@ -160,6 +160,7 @@ module demoappService1 'modules/aca-demo-app.bicep' = {
     appname: 'demoapp1'
     envId: aca1.outputs.id
     location: location
+    allowInsecure: true
   }
 }
 
@@ -172,6 +173,17 @@ module aca2 'modules/containerappEnvironment.bicep' = {
     laSharedKey: logAnalytics.outputs.sharedKey
     location: location
     subnetId: service2vnet.outputs.subnets[1].id
+  }
+}
+
+module demoappService2 'modules/aca-demo-app.bicep' = {
+  scope: service2RG
+  name: 'demoapp2'
+  params: {
+    appname: 'demoapp2'
+    envId: aca2.outputs.id
+    location: location
+    allowInsecure: true
   }
 }
 
@@ -241,48 +253,35 @@ module ubuntuSvc1 'modules/ubuntu.bicep' = {
   }
 }
 
-// resource acaLBService1 'Microsoft.Network/loadBalancers@2020-11-01' existing = {
-//   scope: resourceGroup('MC_gentlehill-7cc635dd-rg_gentlehill-7cc635dd_westeurope')
-//   name: 'kubernetes'
-// }
+resource acaLBService1 'Microsoft.Network/loadBalancers@2020-11-01' existing = {
+  scope: resourceGroup('MC_gentlerock-74ef499f-rg_gentlerock-74ef499f_westeurope')
+  name: 'kubernetes'
+}
 
-// module plsService1 'modules/privatelinkservice.bicep' =  {
-//   scope: resourceGroup(rgNameService1)
-//   name: 'pls-aca-service1'
-//   params: {
-//     // loadBalancer: acaLBService1
-//     location: location
-//     privatelinkServiceName: 'pls-aca-service1'
-//     subnetId: service1vnet.outputs.subnets[1].id
-//   }
-//   dependsOn: [
-//     infrastructure
-//     service1
-//     service2
-//     aca1
-//   ]
-// }
+module plsService1 'modules/privatelinkservice.bicep' =  {
+  scope: resourceGroup(rgNameService1)
+  name: 'pls-aca-service1'
+  params: {
+    // loadBalancer: acaLBService1
+    location: location
+    privatelinkServiceName: 'pls-aca-service1'
+    subnetId: service1vnet.outputs.subnets[1].id
+  }
+}
 
-// module peService1 'modules/privateendpoint.bicep' = {
-//   scope: resourceGroup(rgName)
-//   name: 'pe-pls-service1'
-//   params: {
-//     location: location
-//     privateEndpointName: 'pe-pls-service1'
-//     privatelinkServiceId: plsService1.outputs.id
-//     subnetId: hubVnet.outputs.subnets[0].id
-//   }
-//   dependsOn: [
-//     infrastructure
-//     service1
-//     service2
-//     aca1
-//   ]
-// }
+module peService1 'modules/privateendpoint.bicep' = {
+  scope: resourceGroup(rgName)
+  name: 'pe-pls-service1'
+  params: {
+    location: location
+    privateEndpointName: 'pe-pls-service1'
+    privatelinkServiceId: plsService1.outputs.id
+    subnetId: hubVnet.outputs.subnets[0].id
+  }
+}
 
 /* TODO
- Front door with WAF
- AZFW basic in hub
+ AZFW basic in hub (Default route not supported for ACA)
  PLS in spoke1, exposing SLB for ACA. PE in hub.
  PE in spoke1, exposing cosmosdb in spoke2
  DNS zones for privatelink registered in hub for resolution

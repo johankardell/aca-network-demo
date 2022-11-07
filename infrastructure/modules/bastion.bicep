@@ -23,7 +23,7 @@ resource bastionHost 'Microsoft.Network/bastionHosts@2022-01-01' = {
   properties: {
     enableIpConnect: true
     enableFileCopy: true
-    enableShareableLink: false
+    enableShareableLink: true
     enableTunneling: true
     ipConfigurations: [
       {
