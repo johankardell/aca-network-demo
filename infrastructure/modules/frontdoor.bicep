@@ -8,7 +8,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2021-06-01' = {
   name: frontDoorProfileName
   location: 'global'
   sku: {
-    name: 'Standard_AzureFrontDoor'
+    name: 'Premium_AzureFrontDoor'
   }
 }
 
@@ -71,5 +71,48 @@ resource frontDoorRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2021-06-01' 
     forwardingProtocol: 'HttpsOnly'
     linkToDefaultDomain: 'Enabled'
     httpsRedirect: 'Enabled'
+  }
+}
+
+resource wafpolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2022-05-01' = {
+  name: 'wafpolicy'
+  location: 'Global'
+  sku: {
+    name: 'Premium_AzureFrontDoor'
+  }
+  properties: {
+    managedRules: {
+      managedRuleSets: [
+        {
+          ruleSetAction: 'Block'
+          ruleSetType: 'Microsoft_BotManagerRuleSet'
+          ruleSetVersion: '1.0'
+        }
+      ]
+    }
+  }
+}
+
+resource securityPolicy 'Microsoft.Cdn/profiles/securityPolicies@2022-05-01-preview' = {
+  name: '${frontDoorProfileName}/secpolicy'
+  properties: {
+    parameters:{
+      type: 'WebApplicationFirewall'
+      associations: [
+        {
+          domains:[
+            {
+              id: frontDoorEndpoint.id
+            }
+          ]
+          patternsToMatch: [
+            '/*'
+        ]
+        }
+      ]
+      wafPolicy: {
+        id: wafpolicy.id
+      }
+    }
   }
 }
