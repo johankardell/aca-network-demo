@@ -2,6 +2,8 @@ param appname string
 param location string
 param envId string
 param allowInsecure bool = false
+param image string
+param imageName string
 
 resource academo 'Microsoft.App/containerApps@2022-03-01' = {
   name: appname
@@ -18,8 +20,8 @@ resource academo 'Microsoft.App/containerApps@2022-03-01' = {
     template: {
       containers: [
         {
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-          name: 'helloworld'
+          image: image
+          name: imageName
         } ]
       scale: {
         maxReplicas: 10

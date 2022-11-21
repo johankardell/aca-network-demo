@@ -161,6 +161,8 @@ module demoappService1 'modules/aca-demo-app.bicep' = {
     envId: aca1.outputs.id
     location: location
     allowInsecure: true
+    image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+    imageName: 'aca-helloworld'
   }
 }
 
@@ -184,6 +186,8 @@ module demoappService2 'modules/aca-demo-app.bicep' = {
     envId: aca2.outputs.id
     location: location
     allowInsecure: true
+    image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+    imageName: 'aca-helloworld'
   }
 }
 
@@ -194,6 +198,20 @@ module aca3app 'modules/aca-demo-app.bicep' = {
     appname: 'aca3demoapp'
     envId: aca3.outputs.id
     location: location
+    image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+    imageName: 'aca-helloworld'
+  }
+}
+
+module aca3helloworld 'modules/aca-demo-app.bicep' = {
+  scope: service3RG
+  name: 'aca3helloworld'
+  params: {
+    appname: 'aca3helloworld'
+    envId: aca3.outputs.id
+    location: location
+    image: 'nginxdemos/hello'
+    imageName: 'helloworld'
   }
 }
 
@@ -253,16 +271,11 @@ module ubuntuSvc1 'modules/ubuntu.bicep' = {
   }
 }
 
-resource acaLBService1 'Microsoft.Network/loadBalancers@2020-11-01' existing = {
-  scope: resourceGroup('MC_gentlerock-74ef499f-rg_gentlerock-74ef499f_westeurope')
-  name: 'kubernetes'
-}
-
 module plsService1 'modules/privatelinkservice.bicep' =  {
   scope: resourceGroup(rgNameService1)
   name: 'pls-aca-service1'
   params: {
-    // loadBalancer: acaLBService1
+    acaEnvDefaultDomain: aca1.outputs.defaultDomain
     location: location
     privatelinkServiceName: 'pls-aca-service1'
     subnetId: service1vnet.outputs.subnets[1].id
@@ -282,8 +295,8 @@ module peService1 'modules/privateendpoint.bicep' = {
 
 /* TODO
  AZFW basic in hub (Default route not supported for ACA)
+ Diagnostic logs from WAF -> log analytics
  PLS in spoke1, exposing SLB for ACA. PE in hub.
  PE in spoke1, exposing cosmosdb in spoke2
  DNS zones for privatelink registered in hub for resolution
- Get the external LB for ACA dynamically (not hard coded magic strings)
-*/
+ */

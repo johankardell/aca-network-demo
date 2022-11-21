@@ -86,7 +86,7 @@ resource wafpolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@20
         {
           ruleSetAction: 'Block'
           ruleSetType: 'Microsoft_DefaultRuleSet'
-          ruleSetVersion: '2.0'
+          ruleSetVersion: '2.1'
         }
         {
           ruleSetAction: 'Block'

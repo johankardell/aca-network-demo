@@ -1,7 +1,14 @@
 param privatelinkServiceName string
 param location string
-// param loadBalancer object
+param acaEnvDefaultDomain string
 param subnetId string
+
+var uniqueName = split(acaEnvDefaultDomain,'.')[0]
+
+resource acaLBService1 'Microsoft.Network/loadBalancers@2020-11-01' existing = {
+  scope: resourceGroup('MC_${uniqueName}-rg_${uniqueName}_${location}')
+  name: 'kubernetes-internal'
+}
 
 resource privatelinkService 'Microsoft.Network/privateLinkServices@2021-05-01' = {
   name: privatelinkServiceName
@@ -10,7 +17,7 @@ resource privatelinkService 'Microsoft.Network/privateLinkServices@2021-05-01' =
     enableProxyProtocol: false
     loadBalancerFrontendIpConfigurations: [
       {
-        id: '/subscriptions/e1dbaf8d-ccdb-4dc7-9cf3-a535fb2f98a8/resourceGroups/mc_gentlerock-74ef499f-rg_gentlerock-74ef499f_westeurope/providers/Microsoft.Network/loadBalancers/kubernetes-internal/frontendIPConfigurations/a1a27773a3f004ce2af9a565ab8cad69'
+        id: acaLBService1.properties.frontendIPConfigurations[0].id
       }
     ]
     ipConfigurations: [
@@ -20,7 +27,6 @@ resource privatelinkService 'Microsoft.Network/privateLinkServices@2021-05-01' =
           privateIPAllocationMethod: 'Dynamic'
           privateIPAddressVersion: 'IPv4'
           subnet: {
-            // id: loadBalancer.properties.frontendIPConfigurations[0].properties.subnet.id
             id: subnetId
           }
           primary: false
