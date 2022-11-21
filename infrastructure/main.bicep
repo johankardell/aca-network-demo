@@ -155,14 +155,44 @@ module aca1 'modules/containerappEnvironment.bicep' = {
 
 module demoappService1 'modules/aca-demo-app.bicep' = {
   scope: service1RG
-  name: 'demoapp1'
+  name: 'containerapps-helloworld'
   params: {
-    appname: 'demoapp1'
+    appname: 'containerapps-helloworld'
     envId: aca1.outputs.id
     location: location
     allowInsecure: true
     image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-    imageName: 'aca-helloworld'
+    imageName: 'containerapps-helloworld'
+  }
+}
+
+module aca1helloworld 'modules/aca-demo-app.bicep' = {
+  scope: service1RG
+  name: 'nginx-helloworld'
+  params: {
+    appname: 'nginx-helloworld'
+    envId: aca1.outputs.id
+    location: location
+    image: 'nginxdemos/hello'
+    imageName: 'helloworld'
+  }
+}
+
+module frontdoorSvc1 'modules/frontdoorPrivateLink.bicep' = {
+  scope: service1RG
+  name: 'fd-aca1'
+  params: {
+    frontDoorProfileName: 'fd-aca1'
+    frontDoorEndpointName: 'aca1endpoint'
+    frontDoorOriginGroupNameACA: 'aca1-group'
+    frontDoorOriginNameACA: 'aca1'
+    frontDoorOriginGroupNameNGINX: 'nginx-group'
+    frontDoorOriginNameNGINX: 'nginx'
+    hostNameACA: demoappService1.outputs.uri
+    hostNameNGINX: aca1helloworld.outputs.uri
+    location: location
+    wafpolicyName: 'acahelloworldwaf'
+    privateLinkId: plsService1.outputs.id
   }
 }
 
@@ -187,7 +217,7 @@ module demoappService2 'modules/aca-demo-app.bicep' = {
     location: location
     allowInsecure: true
     image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-    imageName: 'aca-helloworld'
+    imageName: 'containerapps-helloworld'
   }
 }
 
@@ -199,7 +229,7 @@ module aca3app 'modules/aca-demo-app.bicep' = {
     envId: aca3.outputs.id
     location: location
     image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-    imageName: 'aca-helloworld'
+    imageName: 'containerapps-helloworld'
   }
 }
 
@@ -211,7 +241,7 @@ module aca3helloworld 'modules/aca-demo-app.bicep' = {
     envId: aca3.outputs.id
     location: location
     image: 'nginxdemos/hello'
-    imageName: 'helloworld'
+    imageName: 'nginx-helloworld'
   }
 }
 
@@ -231,7 +261,7 @@ module frontdoor 'modules/frontdoor.bicep' = {
   name: 'fd-demo'
   params: {
     frontDoorProfileName: 'fd-aca3'
-    frontDoorEndpointName: 'endpoint'
+    frontDoorEndpointName: 'aca3'
     frontDoorOriginGroupName: 'aca3-group'
     frontDoorOriginName: 'aca3'
     hostName: aca3app.outputs.uri
@@ -293,10 +323,12 @@ module peService1 'modules/privateendpoint.bicep' = {
   }
 }
 
+
+
 /* TODO
  AZFW basic in hub (Default route not supported for ACA)
  Diagnostic logs from WAF -> log analytics
  PLS in spoke1, exposing SLB for ACA. PE in hub.
  PE in spoke1, exposing cosmosdb in spoke2
  DNS zones for privatelink registered in hub for resolution
- */
+*/
