@@ -29,6 +29,8 @@ resource service3RG 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   location: location
 }
 
+// Shared networking components
+
 module hubVnet 'modules/vnet.bicep' = {
   name: 'vnet-hub'
   scope: infrastructureRG
@@ -132,6 +134,30 @@ module hubtospoke2 'modules/vnetpeering.bicep' = {
   }
 }
 
+module bastion 'modules/bastion.bicep' = {
+  scope: infrastructureRG
+  name: 'bastion'
+  params: {
+    bastionHostName: 'bastion'
+    bastionSubnet: hubVnet.outputs.subnets[1].id
+    location: location
+    publicIpName: 'pip-bastion'
+  }
+}
+
+module ubuntu 'modules/ubuntu.bicep' = {
+  scope: infrastructureRG
+  name: 'ubuntu'
+  params: {
+    location: location
+    subnetid: hubVnet.outputs.subnets[0].id
+    vmname: 'ubuntu'
+    publicKey: publicKey
+  }
+}
+
+// Shared log analytics
+
 module logAnalytics 'modules/loganalytics.bicep' = {
   scope: infrastructureRG
   name: 'loganalytics'
@@ -140,6 +166,8 @@ module logAnalytics 'modules/loganalytics.bicep' = {
     location: location
   }
 }
+
+// Demo1
 
 module aca1 'modules/containerappEnvironment.bicep' = {
   scope: service1RG
@@ -196,6 +224,41 @@ module frontdoorSvc1 'modules/frontdoorPrivateLink.bicep' = {
   }
 }
 
+module ubuntuSvc1 'modules/ubuntu.bicep' = {
+  scope: service1RG
+  name: 'ubuntuSvc1'
+  params: {
+    location: location
+    subnetid: service1vnet.outputs.subnets[0].id
+    vmname: 'ubuntu'
+    publicKey: publicKey
+  }
+}
+
+module plsService1 'modules/privatelinkservice.bicep' =  {
+  scope: resourceGroup(rgNameService1)
+  name: 'pls-aca-service1'
+  params: {
+    acaEnvDefaultDomain: aca1.outputs.defaultDomain
+    location: location
+    privatelinkServiceName: 'pls-aca-service1'
+    subnetId: service1vnet.outputs.subnets[1].id
+  }
+}
+
+module peService1 'modules/privateendpoint.bicep' = {
+  scope: resourceGroup(rgName)
+  name: 'pe-pls-service1'
+  params: {
+    location: location
+    privateEndpointName: 'pe-pls-service1'
+    privatelinkServiceId: plsService1.outputs.id
+    subnetId: hubVnet.outputs.subnets[0].id
+  }
+}
+
+// Demo 2
+
 module aca2 'modules/containerappEnvironment.bicep' = {
   scope: service2RG
   name: 'service2'
@@ -220,6 +283,8 @@ module demoappService2 'modules/aca-demo-app.bicep' = {
     imageName: 'containerapps-helloworld'
   }
 }
+
+// Demo 3
 
 module aca3app 'modules/aca-demo-app.bicep' = {
   scope: service3RG
@@ -267,62 +332,6 @@ module frontdoor 'modules/frontdoor.bicep' = {
     hostName: aca3app.outputs.uri
   }
 }
-
-module bastion 'modules/bastion.bicep' = {
-  scope: infrastructureRG
-  name: 'bastion'
-  params: {
-    bastionHostName: 'bastion'
-    bastionSubnet: hubVnet.outputs.subnets[1].id
-    location: location
-    publicIpName: 'pip-bastion'
-  }
-}
-
-module ubuntu 'modules/ubuntu.bicep' = {
-  scope: infrastructureRG
-  name: 'ubuntu'
-  params: {
-    location: location
-    subnetid: hubVnet.outputs.subnets[0].id
-    vmname: 'ubuntu'
-    publicKey: publicKey
-  }
-}
-
-module ubuntuSvc1 'modules/ubuntu.bicep' = {
-  scope: service1RG
-  name: 'ubuntuSvc1'
-  params: {
-    location: location
-    subnetid: service1vnet.outputs.subnets[0].id
-    vmname: 'ubuntu'
-    publicKey: publicKey
-  }
-}
-
-module plsService1 'modules/privatelinkservice.bicep' =  {
-  scope: resourceGroup(rgNameService1)
-  name: 'pls-aca-service1'
-  params: {
-    acaEnvDefaultDomain: aca1.outputs.defaultDomain
-    location: location
-    privatelinkServiceName: 'pls-aca-service1'
-    subnetId: service1vnet.outputs.subnets[1].id
-  }
-}
-
-module peService1 'modules/privateendpoint.bicep' = {
-  scope: resourceGroup(rgName)
-  name: 'pe-pls-service1'
-  params: {
-    location: location
-    privateEndpointName: 'pe-pls-service1'
-    privatelinkServiceId: plsService1.outputs.id
-    subnetId: hubVnet.outputs.subnets[0].id
-  }
-}
-
 
 
 /* TODO

@@ -99,7 +99,8 @@ resource wafpolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@20
 }
 
 resource securityPolicy 'Microsoft.Cdn/profiles/securityPolicies@2022-05-01-preview' = {
-  name: '${frontDoorProfileName}/secpolicy'
+  parent: frontDoorProfile
+  name: 'secpolicy'
   properties: {
     parameters:{
       type: 'WebApplicationFirewall'

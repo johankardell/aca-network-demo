@@ -101,30 +101,6 @@ resource frontDoorOriginNGINX 'Microsoft.Cdn/profiles/originGroups/origins@2021-
   }
 }
 
-
-// resource frontDoorRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2021-06-01' = {
-//   name: 'default'
-//   parent: frontDoorEndpoint
-//   dependsOn: [
-//     frontDoorOriginACA // This explicit dependency is required to ensure that the origin group is not empty when the route is created.
-//   ]
-//   properties: {
-//     originGroup: {
-//       id: frontDoorOriginGroupACA.id
-//     }
-//     supportedProtocols: [
-//       'Http'
-//       'Https'
-//     ]
-//     patternsToMatch: [
-//       '/*'
-//     ]
-//     forwardingProtocol: 'HttpsOnly'
-//     linkToDefaultDomain: 'Enabled'
-//     httpsRedirect: 'Enabled'
-//   }
-// }
-
 resource frontDoorRouteACA 'Microsoft.Cdn/profiles/afdEndpoints/routes@2021-06-01' = {
   name: 'aca'
   parent: frontDoorEndpoint
@@ -203,7 +179,8 @@ resource wafpolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@20
 }
 
 resource securityPolicy 'Microsoft.Cdn/profiles/securityPolicies@2022-05-01-preview' = {
-  name: '${frontDoorProfileName}/secpolicy'
+  parent: frontDoorProfile
+  name: 'secpolicy'
   properties: {
     parameters:{
       type: 'WebApplicationFirewall'
