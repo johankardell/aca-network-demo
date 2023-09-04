@@ -11,3 +11,5 @@ curl --resolve demoapp1--c7oyd15.gentlerock-74ef499f.westeurope.azurecontainerap
 curl -H "Host:demoapp1--c7oyd15.gentlerock-74ef499f.westeurope.azurecontainerapps.io" https://10.0.0.5
 # Works
 curl --resolve demoapp1--c7oyd15.gentlerock-74ef499f.westeurope.azurecontainerapps.io:443:10.0.0.5 https://demoapp1--c7oyd15.gentlerock-74ef499f.westeurope.azurecontainerapps.io
+
+curl --resolve nginx-helloworld.whiteglacier-9d6c7978.francecentral.azurecontainerapps.io:443:10.0.0.5 https://nginx-helloworld.whiteglacier-9d6c7978.francecentral.azurecontainerapps.io
