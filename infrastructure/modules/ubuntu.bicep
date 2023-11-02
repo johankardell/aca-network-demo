@@ -4,6 +4,7 @@ param subnetid string
 param adminUsername string = 'azureuser'
 param publicKey string
 param enablePublicIp bool = true
+param myIp string
 
 resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2019-11-01' = if (enablePublicIp) {
   name: 'pip-${vmname}'
@@ -11,6 +12,28 @@ resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2019-11-01' = if (
   properties: {
     publicIPAllocationMethod: 'Dynamic'
   }
+}
+
+resource nsg 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
+  name: 'nsg-${vmname}'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'ssh'
+        properties: {
+          priority: 1000
+          protocol: 'Tcp'
+          access: 'Allow'
+          direction: 'Inbound'
+          sourceAddressPrefix: myIp
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '22'
+        }
+      }
+    ]
+  } 
 }
 
 resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = {
@@ -31,6 +54,9 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = {
         }
       }
     ]
+    networkSecurityGroup: {
+      id: nsg.id
+    }
   }
 }
 

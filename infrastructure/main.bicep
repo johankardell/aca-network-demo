@@ -9,6 +9,8 @@ var rgNameService3 = 'aca-network-demo-service3'
 @secure()
 param publicKey string
 
+param myIp string
+
 resource infrastructureRG 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: rgName
   location: location
@@ -153,6 +155,7 @@ module ubuntu 'modules/ubuntu.bicep' = {
     subnetid: hubVnet.outputs.subnets[0].id
     vmname: 'ubuntu'
     publicKey: publicKey
+    myIp: myIp
   }
 }
 
@@ -232,6 +235,7 @@ module ubuntuSvc1 'modules/ubuntu.bicep' = {
     subnetid: service1vnet.outputs.subnets[0].id
     vmname: 'ubuntu'
     publicKey: publicKey
+    myIp: myIp
   }
 }
 
